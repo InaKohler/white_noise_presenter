@@ -6,28 +6,29 @@
 <title>Static</title>
 <style>
   :root{
-    --bg: #0b0d0f;
-    --bg-2: #14171a;
-    --text: #e9e6dd;
+    --bg: #32414b;
+    --bg-2: #1a123a;
+    --text: #2d2d2d;
     --dim: #7c8288;
     --amber: #ffb454;
-    --amber-dim: #7a5a2c;
-    --line: #2a2e33;
+    --amber-dim: #b4a069;
+    --line: #2d2d2d;
   }
 
   *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
 
-  html, body{
+html, body{
     height:100%;
     margin:0;
     background: var(--bg);
     color: var(--text);
     font-family: 'Courier New', ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-weight: bold;
     overflow:hidden;
     overscroll-behavior: none;
     -webkit-user-select: none;
     user-select: none;
-  }
+}
 
   .stage{
     height:100dvh;
@@ -40,7 +41,7 @@
   }
 
   .label{
-    font-size: 12px;
+    font-size: 20px;
     letter-spacing: 0.35em;
     color: var(--dim);
     text-transform: uppercase;
@@ -53,15 +54,15 @@
     width: 180px;
     height: 180px;
     border-radius: 50%;
-    background: radial-gradient(circle at 32% 28%, #23272b, #0f1113 70%);
+    background: radial-gradient(circle at 32% 28%, #a51e37, #6b0d1e 70%);
     border: 1px solid var(--line);
     box-shadow:
-      0 0 0 1px rgba(0,0,0,0.4),
-      0 18px 30px rgba(0,0,0,0.45),
-      inset 0 1px 0 rgba(255,255,255,0.04);
+      0 0 0 1px rgba(26,18,58,0.9),
+      0 18px 30px rgba(26,18,58,0.8),
+      inset 0 1px 0 rgba(26,18,58,0.04);
     color: var(--amber);
     font-family: inherit;
-    font-size: 13px;
+    font-size: 18px;
     letter-spacing: 0.25em;
     text-transform: uppercase;
     cursor: pointer;
@@ -72,17 +73,17 @@
   .btn.playing{
     transform: scale(0.96);
     box-shadow:
-      0 0 0 1px rgba(0,0,0,0.4),
-      0 8px 16px rgba(0,0,0,0.4),
-      0 0 24px rgba(255,180,84,0.25),
+      0 0 0 1px rgba(26,18,58,0.4),
+      0 8px 16px rgba(26,18,58,0.4),
+      0 0 24px rgba(100,100,100,0.25),
       inset 0 1px 0 rgba(255,255,255,0.06);
   }
 
   .hint{
-    font-size: 11px;
+    font-size: 18px;
     color: var(--dim);
     letter-spacing: 0.05em;
-    max-width: 260px;
+    max-width: 400px;
     text-align:center;
     line-height:1.5;
   }
@@ -90,7 +91,7 @@
   .wake-warning{
     position:absolute;
     bottom: 14px;
-    font-size: 10px;
+    font-size: 14px;
     color: var(--dim);
     opacity: 0.6;
   }
@@ -103,7 +104,7 @@
 
   <button class="btn" id="btn">Press</button>
 
-  <div class="hint">Tap once for 2 seconds of static.<br>Loudness is randomized each press.</div>
+  <div class="hint">Tap the button to play a noise.<br>Then, take a cookie that is as bright as the noise is loud.</div>
 </div>
 
 <script>
