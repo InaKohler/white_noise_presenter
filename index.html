@@ -46,36 +46,6 @@
     text-transform: uppercase;
   }
 
-  .readout{
-    display:flex;
-    align-items:baseline;
-    gap: 10px;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .readout .db{
-    font-size: 52px;
-    color: var(--amber);
-    min-width: 3.2ch;
-    text-align:right;
-    letter-spacing: -1px;
-    transition: color 0.15s ease;
-  }
-
-  .readout .unit{
-    font-size: 16px;
-    color: var(--dim);
-  }
-
-  canvas{
-    display:block;
-    width: min(88vw, 420px);
-    height: 90px;
-    background: var(--bg-2);
-    border: 1px solid var(--line);
-    border-radius: 4px;
-  }
-
   .btn{
     -webkit-appearance:none;
     appearance:none;
@@ -131,31 +101,22 @@
 <div class="stage">
   <div class="label">white noise</div>
 
-  <div class="readout">
-    <span class="db" id="db">—</span>
-    <span class="unit">gain</span>
-  </div>
+  <button class="btn" id="btn">Press</button>
 
-  <canvas id="scope" width="420" height="90"></canvas>
-
-  <button class="btn" id="btn">Hold</button>
-
-  <div class="hint">Press and hold for static.<br>Loudness is randomized each press.</div>
+  <div class="hint">Tap once for 2 seconds of static.<br>Loudness is randomized each press.</div>
 </div>
 
 <script>
 (() => {
   const btn = document.getElementById('btn');
-  const dbEl = document.getElementById('db');
-  const canvas = document.getElementById('scope');
-  const ctx = canvas.getContext('2d');
 
   let audioCtx = null;
   let noiseNode = null;
   let gainNode = null;
-  let analyser = null;
-  let rafId = null;
   let playing = false;
+  let stopTimeoutId = null;
+
+  const PLAY_DURATION_MS = 2000;
 
   function ensureContext() {
     if (!audioCtx) {
@@ -167,7 +128,7 @@
   }
 
   function makeNoiseBuffer() {
-    const bufferSize = audioCtx.sampleRate * 2; // 2 seconds, loops
+    const bufferSize = audioCtx.sampleRate * 2; // 2 seconds, loops if needed
     const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
     const data = buffer.getChannelData(0);
     for (let i = 0; i < bufferSize; i++) {
@@ -196,99 +157,44 @@
     gainNode = audioCtx.createGain();
     gainNode.gain.value = g;
 
-    analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-
     noiseNode.connect(gainNode);
-    gainNode.connect(analyser);
-    analyser.connect(audioCtx.destination);
+    gainNode.connect(audioCtx.destination);
 
     noiseNode.start();
 
     btn.classList.add('playing');
     btn.textContent = 'Playing';
-    dbEl.textContent = Math.round(g * 100) + '%';
-    dbEl.style.color = 'var(--amber)';
+    btn.disabled = true;
 
-    drawScope();
+    stopTimeoutId = setTimeout(stopNoise, PLAY_DURATION_MS);
   }
 
   function stopNoise() {
     if (!playing) return;
     playing = false;
 
+    if (stopTimeoutId) {
+      clearTimeout(stopTimeoutId);
+      stopTimeoutId = null;
+    }
+
     if (noiseNode) {
       try { noiseNode.stop(); } catch (e) {}
       noiseNode.disconnect();
     }
     if (gainNode) gainNode.disconnect();
-    if (analyser) analyser.disconnect();
 
     noiseNode = null;
     gainNode = null;
-    analyser = null;
 
     btn.classList.remove('playing');
-    btn.textContent = 'Hold';
-
-    if (rafId) cancelAnimationFrame(rafId);
-    clearScope();
+    btn.textContent = 'Press';
+    btn.disabled = false;
   }
 
-  function drawScope() {
-    if (!analyser) return;
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
+  btn.addEventListener('click', startNoise);
 
-    function frame() {
-      if (!playing || !analyser) return;
-      analyser.getByteTimeDomainData(dataArray);
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      ctx.strokeStyle = '#ffb454';
-      ctx.lineWidth = 1.5;
-
-      const sliceWidth = canvas.width / bufferLength;
-      let x = 0;
-      for (let i = 0; i < bufferLength; i++) {
-        const v = dataArray[i] / 128.0;
-        const y = (v * canvas.height) / 2;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-        x += sliceWidth;
-      }
-      ctx.stroke();
-
-      rafId = requestAnimationFrame(frame);
-    }
-    frame();
-  }
-
-  function clearScope() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.beginPath();
-    ctx.strokeStyle = '#2a2e33';
-    ctx.lineWidth = 1;
-    ctx.moveTo(0, canvas.height / 2);
-    ctx.lineTo(canvas.width, canvas.height / 2);
-    ctx.stroke();
-    dbEl.textContent = '—';
-    dbEl.style.color = 'var(--text)';
-  }
-
-  clearScope();
-
-  // Pointer events cover mouse, touch, and pen uniformly
-  btn.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    startNoise();
-  });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt => {
-    btn.addEventListener(evt, stopNoise);
-  });
-
-  // Safety: stop if tab loses focus while held
+  // Safety: stop if tab loses focus mid-playback
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) stopNoise();
   });
